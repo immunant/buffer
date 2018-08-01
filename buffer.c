@@ -144,6 +144,7 @@ buffer_resize(buffer_t *self, size_t n) {
  * Append a printf-style formatted string to the buffer.
  */
 
+/*
 int buffer_appendf(buffer_t *self, const char *format, ...) {
   va_list ap;
   va_list tmpa;
@@ -177,6 +178,7 @@ int buffer_appendf(buffer_t *self, const char *format, ...) {
     ? -1
     : 0;
 }
+*/
 
 /*
  * Append `str` to `self` and return 0 on success, -1 on failure.
