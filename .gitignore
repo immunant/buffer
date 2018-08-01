@@ -1,2 +1,5 @@
 test
 *.o
+
+*.cbor
+c2rust-build/target/
