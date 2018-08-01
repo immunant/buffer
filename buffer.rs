@@ -1,6 +1,7 @@
 use libc;
 use std::slice;
 use std::ptr::drop_in_place;
+use std::ptr;
 extern "C" {
     pub type _IO_FILE_plus;
     #[no_mangle]
@@ -127,7 +128,7 @@ pub unsafe extern "C" fn buffer_new_with_size(mut n: size_t)
         return 0 as *mut buffer_t
     } else {
         (*self_0).len = n;
-        (*self_0).alloc = vec![0; n + 1];
+        ptr::write(&mut (*self_0).alloc, vec![0; n + 1]);
         (*self_0).data = (*self_0).alloc.as_mut_ptr();
         return self_0
     };
@@ -149,7 +150,7 @@ pub unsafe extern "C" fn buffer_new_with_string_length(mut str:
         return 0 as *mut buffer_t
     } else {
         (*self_0).len = len;
-        (*self_0).alloc = Vec::from_raw_parts(str, len, len);
+        ptr::write(&mut (*self_0).alloc, Vec::from_raw_parts(str, len, len));
         (*self_0).data = (*self_0).alloc.as_mut_ptr();
         return self_0
     };
@@ -279,7 +280,7 @@ pub unsafe extern "C" fn buffer_compact(mut self_0: *mut buffer_t)
     let mut buf = vec![0; len + 1];
     buf.splice(..len, slice::from_raw_parts((*self_0).data, len).iter().cloned());
     (*self_0).len = len;
-    (*self_0).alloc = buf;
+    (*self_0).alloc = buf; // Note: we implicitly drop alloc here
     (*self_0).data = (*self_0).alloc.as_mut_ptr();
     return rem as ssize_t
 }
