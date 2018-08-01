@@ -1,5 +1,6 @@
 use libc;
 use std::slice;
+use std::ptr::drop_in_place;
 extern "C" {
     pub type _IO_FILE_plus;
     #[no_mangle]
@@ -177,7 +178,7 @@ pub unsafe extern "C" fn buffer_length(mut self_0: *mut buffer_t) -> size_t {
 }
 #[no_mangle]
 pub unsafe extern "C" fn buffer_free(mut self_0: *mut buffer_t) -> () {
-    drop(self_0);
+    drop_in_place(self_0);
     free(self_0 as *mut libc::c_void);
 }
 #[no_mangle]
@@ -277,7 +278,6 @@ pub unsafe extern "C" fn buffer_compact(mut self_0: *mut buffer_t)
     let mut rem: size_t = (*self_0).len.wrapping_sub(len);
     let mut buf = vec![0; len + 1];
     buf.splice(..len, slice::from_raw_parts((*self_0).data, len).iter().cloned());
-    drop(self_0); // TODO: Find a better way to deallocate the vec
     (*self_0).len = len;
     (*self_0).alloc = buf;
     (*self_0).data = (*self_0).alloc.as_mut_ptr();
