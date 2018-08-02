@@ -1,7 +1,6 @@
 use libc;
 use std::slice;
-use std::ptr::drop_in_place;
-use std::ptr;
+use std::boxed::Box;
 extern "C" {
     pub type _IO_FILE_plus;
     #[no_mangle]
@@ -37,14 +36,6 @@ extern "C" {
     static mut stderr: *mut _IO_FILE;
     #[no_mangle]
     fn printf(_: *const libc::c_char, ...) -> libc::c_int;
-    #[no_mangle]
-    fn malloc(_: size_t) -> *mut libc::c_void;
-    #[no_mangle]
-    fn calloc(_: size_t, _: size_t) -> *mut libc::c_void;
-    #[no_mangle]
-    fn realloc(_: *mut libc::c_void, _: size_t) -> *mut libc::c_void;
-    #[no_mangle]
-    fn free(__ptr: *mut libc::c_void) -> ();
     #[no_mangle]
     fn __ctype_b_loc() -> *mut *const libc::c_ushort;
 }
@@ -115,45 +106,37 @@ pub const _ISxdigit: unnamed = 4096;
 pub const _ISlower: unnamed = 512;
 pub const _ISdigit: unnamed = 2048;
 #[no_mangle]
-pub unsafe extern "C" fn buffer_new() -> *mut buffer_t {
+pub extern "C" fn buffer_new() -> *mut buffer_t {
     return buffer_new_with_size(64i32 as size_t);
 }
 #[no_mangle]
-pub unsafe extern "C" fn buffer_new_with_size(mut n: size_t)
- -> *mut buffer_t {
-    let mut self_0: *mut buffer_t =
-        malloc(::std::mem::size_of::<buffer_t>()) as
-            *mut buffer_t;
-    if self_0.is_null() {
-        return 0 as *mut buffer_t
-    } else {
-        (*self_0).len = n;
-        ptr::write(&mut (*self_0).alloc, vec![0; n + 1]);
-        (*self_0).data = (*self_0).alloc.as_mut_ptr();
-        return self_0
-    };
+pub extern "C" fn buffer_new_with_size(mut n: size_t)
+                                       -> *mut buffer_t {
+    let mut v = vec![0; n + 1];
+    let mut b = Box::new(buffer_t {
+        len: n,
+        data: v.as_mut_ptr(),
+        alloc: v,
+    });
+    Box::into_raw(b)
 }
 #[no_mangle]
-pub unsafe extern "C" fn buffer_new_with_string(mut str: *mut libc::c_char)
+pub extern "C" fn buffer_new_with_string(mut str: *mut libc::c_char)
  -> *mut buffer_t {
-    return buffer_new_with_string_length(str, strlen(str));
+    return buffer_new_with_string_length(str, unsafe { strlen(str) });
 }
 #[no_mangle]
-pub unsafe extern "C" fn buffer_new_with_string_length(mut str:
-                                                           *mut libc::c_char,
-                                                       mut len: size_t)
- -> *mut buffer_t {
-    let mut self_0: *mut buffer_t =
-        malloc(::std::mem::size_of::<buffer_t>()) as
-            *mut buffer_t;
-    if self_0.is_null() {
-        return 0 as *mut buffer_t
-    } else {
-        (*self_0).len = len;
-        ptr::write(&mut (*self_0).alloc, Vec::from_raw_parts(str, len, len));
-        (*self_0).data = (*self_0).alloc.as_mut_ptr();
-        return self_0
-    };
+pub extern "C" fn buffer_new_with_string_length(mut str:
+                                                *mut libc::c_char,
+                                                mut len: size_t)
+                                                -> *mut buffer_t {
+    let mut v = unsafe { Vec::from_raw_parts(str, len, len) };
+    let mut b = Box::new(buffer_t {
+        len: len,
+        data: v.as_mut_ptr(),
+        alloc: v,
+    });
+    Box::into_raw(b)
 }
 #[no_mangle]
 pub unsafe extern "C" fn buffer_new_with_copy(mut str: *mut libc::c_char)
@@ -178,9 +161,8 @@ pub unsafe extern "C" fn buffer_length(mut self_0: *mut buffer_t) -> size_t {
     return strlen((*self_0).data);
 }
 #[no_mangle]
-pub unsafe extern "C" fn buffer_free(mut self_0: *mut buffer_t) -> () {
-    drop_in_place(self_0);
-    free(self_0 as *mut libc::c_void);
+pub extern "C" fn buffer_free(mut self_0: *mut buffer_t) -> () {
+    unsafe { Box::from_raw(self_0) };
 }
 #[no_mangle]
 pub unsafe extern "C" fn buffer_prepend(mut self_0: *mut buffer_t,
