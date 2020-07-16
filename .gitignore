@@ -1,2 +1,6 @@
 test
 *.o
+.vscode
+compile_commands.json
+target
+Cargo.lock
