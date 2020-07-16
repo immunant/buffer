@@ -1,0 +1,27 @@
+[workspace]
+members = [
+]
+
+[package]
+name = "buffer"
+authors = ["C2Rust"]
+version = "0.0.0"
+publish = false
+edition = "2018"
+autobins = false
+
+[lib]
+name = "buffer"
+path = "libbuffer.rs"
+crate-type = ["staticlib", "rlib"]
+
+
+[[bin]]
+path = "test.rs"
+name = "buffer"
+
+[dependencies]
+libc = "0.2"
+
+
+
