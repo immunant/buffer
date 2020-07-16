@@ -1,5 +1,5 @@
 use libc;
-use std::ptr::copy;
+
 extern "C" {
     #[no_mangle]
     fn memcpy(_: *mut libc::c_void, _: *const libc::c_void, _: libc::c_ulong) -> *mut libc::c_void;
@@ -266,9 +266,9 @@ pub fn buffer_resize(self_0: &mut buffer_t, mut n: size_t) -> libc::c_int {
  */
 #[no_mangle]
 pub unsafe extern "C" fn buffer_appendf(
-    mut self_0: *mut buffer_t,
-    mut format: *const libc::c_char,
-    mut args: ...
+    mut _self_0: *mut buffer_t,
+    mut _format: *const libc::c_char,
+    mut _args: ...
 ) -> libc::c_int {
     unimplemented!();
     //     let mut ap: ::std::ffi::VaListImpl;
@@ -338,8 +338,8 @@ pub fn buffer_append_n(
  */
 #[no_mangle]
 pub unsafe extern "C" fn buffer_prepend(
-    mut self_0: *mut buffer_t,
-    mut str: *mut libc::c_char,
+    mut _self_0: *mut buffer_t,
+    mut _str: *mut libc::c_char,
 ) -> libc::c_int {
     unimplemented!();
     // let mut ret: libc::c_int = 0;
@@ -366,9 +366,9 @@ pub unsafe extern "C" fn buffer_prepend(
  */
 #[no_mangle]
 pub unsafe extern "C" fn buffer_slice(
-    mut buf: *mut buffer_t,
-    mut from: size_t,
-    mut to: ssize_t,
+    mut _buf: *mut buffer_t,
+    mut _from: size_t,
+    mut _to: ssize_t,
 ) -> *mut buffer_t {
     unimplemented!();
     // let mut len: size_t = strlen((*buf).data);
@@ -391,8 +391,8 @@ pub unsafe extern "C" fn buffer_slice(
  */
 #[no_mangle]
 pub unsafe extern "C" fn buffer_equals(
-    mut self_0: *mut buffer_t,
-    mut other: *mut buffer_t,
+    mut _self_0: *mut buffer_t,
+    mut _other: *mut buffer_t,
 ) -> libc::c_int {
     unimplemented!();
     // return (0 as libc::c_int == strcmp((*self_0).data, (*other).data)) as
@@ -403,8 +403,8 @@ pub unsafe extern "C" fn buffer_equals(
  */
 #[no_mangle]
 pub unsafe extern "C" fn buffer_indexof(
-    mut self_0: *mut buffer_t,
-    mut str: *mut libc::c_char,
+    mut _self_0: *mut buffer_t,
+    mut _str: *mut libc::c_char,
 ) -> ssize_t {
     unimplemented!();
     // let mut sub: *mut libc::c_char = strstr((*self_0).data, str);
@@ -415,7 +415,7 @@ pub unsafe extern "C" fn buffer_indexof(
  * Trim leading whitespace.
  */
 #[no_mangle]
-pub unsafe extern "C" fn buffer_trim_left(mut self_0: *mut buffer_t) {
+pub unsafe extern "C" fn buffer_trim_left(mut _self_0: *mut buffer_t) {
     unimplemented!();
     // let mut c: libc::c_int = 0;
     // loop  {
@@ -428,7 +428,7 @@ pub unsafe extern "C" fn buffer_trim_left(mut self_0: *mut buffer_t) {
  * Trim trailing whitespace.
  */
 #[no_mangle]
-pub unsafe extern "C" fn buffer_trim_right(mut self_0: *mut buffer_t) {
+pub unsafe extern "C" fn buffer_trim_right(mut _self_0: *mut buffer_t) {
     unimplemented!();
     // let mut c: libc::c_int = 0;
     // let mut i: size_t =
@@ -454,7 +454,7 @@ pub unsafe extern "C" fn buffer_trim(mut self_0: *mut buffer_t) {
  * Fill the buffer with `c`.
  */
 #[no_mangle]
-pub unsafe extern "C" fn buffer_fill(mut self_0: *mut buffer_t, mut c: libc::c_int) {
+pub unsafe extern "C" fn buffer_fill(mut _self_0: *mut buffer_t, mut _c: libc::c_int) {
     unimplemented!();
     // memset((*self_0).data as *mut libc::c_void, c, (*self_0).len);
 }
@@ -469,7 +469,7 @@ pub unsafe extern "C" fn buffer_clear(mut self_0: *mut buffer_t) {
  * Print a hex dump of the buffer.
  */
 #[no_mangle]
-pub unsafe extern "C" fn buffer_print(mut self_0: *mut buffer_t) {
+pub unsafe extern "C" fn buffer_print(mut _self_0: *mut buffer_t) {
     unimplemented!();
     // let mut i: libc::c_int = 0;
     // let mut len: size_t = (*self_0).len;
