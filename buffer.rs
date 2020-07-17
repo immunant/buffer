@@ -225,7 +225,7 @@ pub fn buffer_compact(self_0: &mut buffer_t) -> ssize_t {
     let len: size_t = buffer_length(self_0);
     let rem: size_t = self_0.len.wrapping_sub(len);
     let mut buf = vec![0; len as usize + 1].into_boxed_slice();
-    buf.clone_from_slice(&*self_0.alloc);
+    buf.clone_from_slice(&self_0.alloc[self_0.data as usize..self_0.data as usize + len as usize + 1]);
     self_0.len = len;
     self_0.alloc = buf;
     self_0.data = 0;

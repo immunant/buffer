@@ -491,61 +491,21 @@ pub unsafe extern "C" fn test_buffer_trim() {
     );
     buffer_free(buf);
 }
-// #[no_mangle]
-// pub unsafe extern "C" fn test_buffer_compact() {
-//     let mut buf: *mut buffer_t =
-//         buffer_new_with_copy(b"  Hello\n\n \x00" as *const u8 as
-//                                  *const libc::c_char as *mut libc::c_char);
-//     buffer_trim(buf);
-//     if !(5 as libc::c_int as libc::c_ulong == buffer_length(buf)) as
-//            libc::c_int as libc::c_long != 0 {
-//         __assert_rtn((*::std::mem::transmute::<&[u8; 20],
-//                                                &[libc::c_char; 20]>(b"test_buffer_compact\x00")).as_ptr(),
-//                      b"test.c\x00" as *const u8 as *const libc::c_char,
-//                      220 as libc::c_int,
-//                      b"5 == buffer_length(buf)\x00" as *const u8 as
-//                          *const libc::c_char);
-//     } else { };
-//     if !(10 as libc::c_int as libc::c_ulong == buffer_size(buf)) as
-//            libc::c_int as libc::c_long != 0 {
-//         __assert_rtn((*::std::mem::transmute::<&[u8; 20],
-//                                                &[libc::c_char; 20]>(b"test_buffer_compact\x00")).as_ptr(),
-//                      b"test.c\x00" as *const u8 as *const libc::c_char,
-//                      221 as libc::c_int,
-//                      b"10 == buffer_size(buf)\x00" as *const u8 as
-//                          *const libc::c_char);
-//     } else { };
-//     let mut removed: ssize_t = buffer_compact(buf);
-//     if !(5 as libc::c_int as libc::c_long == removed) as libc::c_int as
-//            libc::c_long != 0 {
-//         __assert_rtn((*::std::mem::transmute::<&[u8; 20],
-//                                                &[libc::c_char; 20]>(b"test_buffer_compact\x00")).as_ptr(),
-//                      b"test.c\x00" as *const u8 as *const libc::c_char,
-//                      224 as libc::c_int,
-//                      b"5 == removed\x00" as *const u8 as *const libc::c_char);
-//     } else { };
-//     if !(5 as libc::c_int as libc::c_ulong == buffer_length(buf)) as
-//            libc::c_int as libc::c_long != 0 {
-//         __assert_rtn((*::std::mem::transmute::<&[u8; 20],
-//                                                &[libc::c_char; 20]>(b"test_buffer_compact\x00")).as_ptr(),
-//                      b"test.c\x00" as *const u8 as *const libc::c_char,
-//                      225 as libc::c_int,
-//                      b"5 == buffer_length(buf)\x00" as *const u8 as
-//                          *const libc::c_char);
-//     } else { };
-//     if !(5 as libc::c_int as libc::c_ulong == buffer_size(buf)) as libc::c_int
-//            as libc::c_long != 0 {
-//         __assert_rtn((*::std::mem::transmute::<&[u8; 20],
-//                                                &[libc::c_char; 20]>(b"test_buffer_compact\x00")).as_ptr(),
-//                      b"test.c\x00" as *const u8 as *const libc::c_char,
-//                      226 as libc::c_int,
-//                      b"5 == buffer_size(buf)\x00" as *const u8 as
-//                          *const libc::c_char);
-//     } else { };
-//     equal(b"Hello\x00" as *const u8 as *const libc::c_char as
-//               *mut libc::c_char, (*buf).data);
-//     buffer_free(buf);
-// }
+#[no_mangle]
+pub unsafe extern "C" fn test_buffer_compact() {
+    let mut buf = buffer_new_with_copy(b"  Hello\n\n \x00" as *const u8 as
+                                 *const libc::c_char as *mut libc::c_char);
+    buffer_trim(&mut buf);
+    assert_eq!(5, buffer_length(&buf));
+    assert_eq!(10, buffer_size(&buf));
+    let mut removed: ssize_t = buffer_compact(&mut buf);
+    assert_eq!(5, removed);
+    assert_eq!(5, buffer_length(&buf));
+    assert_eq!(5, buffer_size(&buf));
+    equal(b"Hello\x00" as *const u8 as *const libc::c_char as
+              *mut libc::c_char, buf.data_ptr());
+    buffer_free(buf);
+}
 unsafe fn main_0() -> libc::c_int {
     test_buffer_new();
     test_buffer_new_with_size();
@@ -563,7 +523,7 @@ unsafe fn main_0() -> libc::c_int {
     // test_buffer_fill();
     // test_buffer_clear();
     test_buffer_trim();
-    // test_buffer_compact();
+    test_buffer_compact();
     printf(
         b"\n  \x1b[32m\xe2\x9c\x93 \x1b[90mok\x1b[0m\n\n\x00" as *const u8 as *const libc::c_char,
     );
