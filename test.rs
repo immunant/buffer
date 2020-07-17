@@ -24,38 +24,7 @@ extern "C" {
     fn strcmp(_: *const libc::c_char, _: *const libc::c_char) -> libc::c_int;
     #[no_mangle]
     fn strlen(_: *const libc::c_char) -> libc::c_ulong;
-    #[no_mangle]
-    fn buffer_new_with_copy(str: *mut libc::c_char) -> *mut buffer_t;
-    #[no_mangle]
-    fn buffer_prepend(self_0: *mut buffer_t, str: *mut libc::c_char) -> libc::c_int;
-    #[no_mangle]
-    fn buffer_appendf(self_0: *mut buffer_t, format: *const libc::c_char, _: ...) -> libc::c_int;
-    #[no_mangle]
-    fn buffer_append_n(self_0: *mut buffer_t, str: *const libc::c_char, len: size_t)
-        -> libc::c_int;
-    #[no_mangle]
-    fn buffer_equals(self_0: *mut buffer_t, other: *mut buffer_t) -> libc::c_int;
-    #[no_mangle]
-    fn buffer_indexof(self_0: *mut buffer_t, str: *mut libc::c_char) -> ssize_t;
-    #[no_mangle]
-    fn buffer_slice(self_0: *mut buffer_t, from: size_t, to: ssize_t) -> *mut buffer_t;
-    #[no_mangle]
-    fn buffer_compact(self_0: *mut buffer_t) -> ssize_t;
-    #[no_mangle]
-    fn buffer_fill(self_0: *mut buffer_t, c: libc::c_int);
-    #[no_mangle]
-    fn buffer_clear(self_0: *mut buffer_t);
-    #[no_mangle]
-    fn buffer_trim_left(self_0: *mut buffer_t);
-    #[no_mangle]
-    fn buffer_trim_right(self_0: *mut buffer_t);
-    #[no_mangle]
-    fn buffer_trim(self_0: *mut buffer_t);
 }
-pub type __darwin_size_t = libc::c_ulong;
-pub type __darwin_ssize_t = libc::c_long;
-pub type size_t = __darwin_size_t;
-pub type ssize_t = __darwin_ssize_t;
 
 //
 // test.c
@@ -492,30 +461,36 @@ fn test_buffer_append() {
 //     } else { };
 //     buffer_free(buf);
 // }
-// #[no_mangle]
-// pub unsafe extern "C" fn test_buffer_trim() {
-//     let mut buf: *mut buffer_t =
-//         buffer_new_with_copy(b"  Hello\n\n \x00" as *const u8 as
-//                                  *const libc::c_char as *mut libc::c_char);
-//     buffer_trim(buf);
-//     equal(b"Hello\x00" as *const u8 as *const libc::c_char as
-//               *mut libc::c_char, (*buf).data);
-//     buffer_free(buf);
-//     buf =
-//         buffer_new_with_copy(b"  Hello\n\n \x00" as *const u8 as
-//                                  *const libc::c_char as *mut libc::c_char);
-//     buffer_trim_left(buf);
-//     equal(b"Hello\n\n \x00" as *const u8 as *const libc::c_char as
-//               *mut libc::c_char, (*buf).data);
-//     buffer_free(buf);
-//     buf =
-//         buffer_new_with_copy(b"  Hello\n\n \x00" as *const u8 as
-//                                  *const libc::c_char as *mut libc::c_char);
-//     buffer_trim_right(buf);
-//     equal(b"  Hello\x00" as *const u8 as *const libc::c_char as
-//               *mut libc::c_char, (*buf).data);
-//     buffer_free(buf);
-// }
+#[no_mangle]
+pub unsafe extern "C" fn test_buffer_trim() {
+    let mut buf = buffer_new_with_copy(
+        b"  Hello\n\n \x00" as *const u8 as *const libc::c_char as *mut libc::c_char,
+    );
+    buffer_trim(&mut buf);
+    equal(
+        b"Hello\x00" as *const u8 as *const libc::c_char as *mut libc::c_char,
+        buf.data_ptr(),
+    );
+    buffer_free(buf);
+    buf = buffer_new_with_copy(
+        b"  Hello\n\n \x00" as *const u8 as *const libc::c_char as *mut libc::c_char,
+    );
+    buffer_trim_left(&mut buf);
+    equal(
+        b"Hello\n\n \x00" as *const u8 as *const libc::c_char as *mut libc::c_char,
+        buf.data_ptr(),
+    );
+    buffer_free(buf);
+    buf = buffer_new_with_copy(
+        b"  Hello\n\n \x00" as *const u8 as *const libc::c_char as *mut libc::c_char,
+    );
+    buffer_trim_right(&mut buf);
+    equal(
+        b"  Hello\x00" as *const u8 as *const libc::c_char as *mut libc::c_char,
+        buf.data_ptr(),
+    );
+    buffer_free(buf);
+}
 // #[no_mangle]
 // pub unsafe extern "C" fn test_buffer_compact() {
 //     let mut buf: *mut buffer_t =
@@ -587,7 +562,7 @@ unsafe fn main_0() -> libc::c_int {
     // test_buffer_indexof();
     // test_buffer_fill();
     // test_buffer_clear();
-    // test_buffer_trim();
+    test_buffer_trim();
     // test_buffer_compact();
     printf(
         b"\n  \x1b[32m\xe2\x9c\x93 \x1b[90mok\x1b[0m\n\n\x00" as *const u8 as *const libc::c_char,

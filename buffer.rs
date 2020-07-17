@@ -134,14 +134,21 @@ impl buffer_t {
     pub unsafe fn data_mut_ptr(&mut self) -> *mut libc::c_char {
         self.alloc.as_mut_ptr().offset(self.data as isize)
     }
+
+    pub fn data_slice(&self) -> &[libc::c_char] {
+        &self.alloc[self.data as usize..]
+    }
+
+    pub fn data_mut_slice(&mut self) -> &mut [libc::c_char] {
+        &mut self.alloc[self.data as usize..]
+    }
 }
 
-#[inline]
-unsafe extern "C" fn isascii(mut _c: libc::c_int) -> libc::c_int {
+fn isascii(mut _c: libc::c_int) -> libc::c_int {
     return (_c & !(0x7f as libc::c_int) == 0 as libc::c_int) as libc::c_int;
 }
-#[inline]
-unsafe extern "C" fn __istype(mut _c: __darwin_ct_rune_t, mut _f: libc::c_ulong) -> libc::c_int {
+
+unsafe fn __istype(mut _c: __darwin_ct_rune_t, mut _f: libc::c_ulong) -> libc::c_int {
     return if isascii(_c) != 0 {
         (_DefaultRuneLocale.__runetype[_c as usize] as libc::c_ulong & _f != 0) as libc::c_int
     } else {
@@ -151,8 +158,8 @@ unsafe extern "C" fn __istype(mut _c: __darwin_ct_rune_t, mut _f: libc::c_ulong)
 #[no_mangle]
 #[inline]
 #[linkage = "external"]
-pub unsafe extern "C" fn isspace(mut _c: libc::c_int) -> libc::c_int {
-    return __istype(_c, 0x4000 as libc::c_long as libc::c_ulong);
+pub fn isspace(mut _c: libc::c_int) -> libc::c_int {
+    unsafe { __istype(_c, 0x4000 as libc::c_long as libc::c_ulong) }
 }
 /*
  * Allocate a new buffer with BUFFER_DEFAULT_SIZE.
@@ -179,9 +186,9 @@ pub fn buffer_new_with_size<'a>(mut n: size_t) -> buffer_t {
 /*
  * Allocate a new buffer with `str`.
  */
-pub unsafe extern "C" fn buffer_new_with_string(str: Box<[libc::c_char]>) -> buffer_t {
+pub fn buffer_new_with_string(str: Box<[libc::c_char]>) -> buffer_t {
     // note, this has to be a separate stmt, so borrow ends before str is moved into callee
-    let len = strlen(str.as_ptr());
+    let len = unsafe { strlen(str.as_ptr()) };
     return buffer_new_with_string_length(str, len);
 }
 /*
@@ -202,10 +209,11 @@ pub fn buffer_new_with_string_length(str: Box<[libc::c_char]>, len: size_t) -> b
  * Allocate a new buffer with a copy of `str`.
  */
 #[no_mangle]
-pub fn buffer_new_with_copy(mut str: Box<[libc::c_char]>) -> buffer_t {
-    let mut len: size_t = unsafe { strlen(str.as_ptr()) };
+pub fn buffer_new_with_copy(mut str: *const libc::c_char) -> buffer_t {
+    let mut len: size_t = unsafe { strlen(str) };
     let mut self_0: buffer_t = buffer_new_with_size(len);
-    self_0.alloc.clone_from_slice(&*str);
+    let s = unsafe { std::slice::from_raw_parts(str, len as usize + 1) };
+    self_0.alloc.clone_from_slice(&s);
     self_0.data = 0;
     return self_0;
 }
@@ -415,38 +423,37 @@ pub unsafe extern "C" fn buffer_indexof(
  * Trim leading whitespace.
  */
 #[no_mangle]
-pub unsafe extern "C" fn buffer_trim_left(mut _self_0: *mut buffer_t) {
-    unimplemented!();
-    // let mut c: libc::c_int = 0;
-    // loop  {
-    //     c = *(*self_0).data as libc::c_int;
-    //     if !(c != 0 && isspace(c) != 0) { break ; }
-    //     (*self_0).data = (*self_0).data.offset(1)
-    // };
+pub fn buffer_trim_left(self_0: &mut buffer_t) {
+    let mut c: libc::c_int = 0;
+    loop {
+        c = self_0.data_slice()[0] as libc::c_int;
+        if !(c != 0 && isspace(c) != 0) {
+            break;
+        }
+        self_0.data += 1;
+    }
 }
 /*
  * Trim trailing whitespace.
  */
 #[no_mangle]
-pub unsafe extern "C" fn buffer_trim_right(mut _self_0: *mut buffer_t) {
-    unimplemented!();
-    // let mut c: libc::c_int = 0;
-    // let mut i: size_t =
-    //     buffer_length(self_0).wrapping_sub(1 as libc::c_int as libc::c_ulong);
-    // loop  {
-    //     c = *(*self_0).data.offset(i as isize) as libc::c_int;
-    //     if !(c != 0 && isspace(c) != 0) { break ; }
-    //     let fresh0 = i;
-    //     i = i.wrapping_sub(1);
-    //     *(*self_0).data.offset(fresh0 as isize) =
-    //         0 as libc::c_int as libc::c_char
-    // };
+pub fn buffer_trim_right(mut self_0: &mut buffer_t) {
+    let mut c: libc::c_int = 0;
+    let mut i: usize = buffer_length(self_0) as usize - 1;
+    loop {
+        c = self_0.data_slice()[i] as libc::c_int;
+        if !(c != 0 && isspace(c) != 0) {
+            break;
+        }
+        self_0.data_mut_slice()[i] = 0;
+        i = i - 1;
+    }
 }
 /*
  * Trim trailing and leading whitespace.
  */
 #[no_mangle]
-pub unsafe extern "C" fn buffer_trim(mut self_0: *mut buffer_t) {
+pub fn buffer_trim(self_0: &mut buffer_t) {
     buffer_trim_left(self_0);
     buffer_trim_right(self_0);
 }
