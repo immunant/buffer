@@ -1,6 +1,7 @@
 test
 *.o
 .vscode
+.idea
 compile_commands.json
 target
 Cargo.lock
