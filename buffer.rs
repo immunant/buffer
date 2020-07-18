@@ -164,13 +164,13 @@ pub fn isspace(mut _c: libc::c_int) -> libc::c_int {
 /*
  * Allocate a new buffer with BUFFER_DEFAULT_SIZE.
  */
-pub fn buffer_new<'a>() -> buffer_t {
+pub fn buffer_new() -> buffer_t {
     return buffer_new_with_size(64 as size_t);
 }
 /*
  * Allocate a new buffer with `n` bytes.
  */
-pub fn buffer_new_with_size<'a>(mut n: size_t) -> buffer_t {
+pub fn buffer_new_with_size(mut n: size_t) -> buffer_t {
     // If we used MaybeUninit<T>, then we'd have to initialize alloc field in unsafe block
     // before we can call assume_init to get the T out.
     let mut self_0 = buffer_t {

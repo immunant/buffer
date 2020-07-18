@@ -10,7 +10,6 @@
 #![feature(linkage)]
 #![feature(ptr_wrapping_offset_from)]
 #![feature(new_uninit)]
-#![feature(slice_from_raw_parts)]
 
 extern crate libc;
 
