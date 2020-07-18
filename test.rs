@@ -74,7 +74,7 @@ fn test_buffer_append() {
     );
     equal(
         b"Hello World\x00" as *const u8 as *const libc::c_char as *mut libc::c_char,
-        unsafe { buf.alloc.as_ptr().offset(buf.data as isize) },
+        unsafe { buf.data_ptr() },
     );
     buffer_free(buf);
 }

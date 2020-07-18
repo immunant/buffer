@@ -161,6 +161,14 @@ unsafe fn __istype(mut _c: __darwin_ct_rune_t, mut _f: libc::c_ulong) -> libc::c
 pub fn isspace(mut _c: libc::c_int) -> libc::c_int {
     unsafe { __istype(_c, 0x4000 as libc::c_long as libc::c_ulong) }
 }
+
+fn safe_strlen(str: &[libc::c_char]) -> size_t {
+    str
+        .iter()
+        .position(|&c| c == 0)
+        .expect("input string isn't null terminated") as size_t
+}
+
 /*
  * Allocate a new buffer with BUFFER_DEFAULT_SIZE.
  */
@@ -188,7 +196,7 @@ pub fn buffer_new_with_size(mut n: size_t) -> buffer_t {
  */
 pub fn buffer_new_with_string(str: Box<[libc::c_char]>) -> buffer_t {
     // note, this has to be a separate stmt, so borrow ends before str is moved into callee
-    let len = unsafe { strlen(str.as_ptr()) };
+    let len = safe_strlen(str.as_ref());
     return buffer_new_with_string_length(str, len);
 }
 /*
@@ -210,7 +218,7 @@ pub fn buffer_new_with_string_length(str: Box<[libc::c_char]>, len: size_t) -> b
  */
 #[no_mangle]
 pub fn buffer_new_with_copy(mut str: *const libc::c_char) -> buffer_t {
-    let mut len: size_t = unsafe { strlen(str) };
+    let mut len: size_t = unsafe{ strlen(str) };
     let mut self_0: buffer_t = buffer_new_with_size(len);
     let s = unsafe { std::slice::from_raw_parts(str, len as usize + 1) };
     self_0.alloc.clone_from_slice(&s);
@@ -250,7 +258,7 @@ pub fn buffer_size(self_0: &buffer_t) -> size_t {
  * Return string length.
  */
 pub fn buffer_length(self_0: &buffer_t) -> size_t {
-    return unsafe { strlen(self_0.data_ptr()) };
+    safe_strlen(self_0.data_slice())
 }
 
 // this was a macro
@@ -325,7 +333,7 @@ pub fn buffer_append_n(
     str: *const libc::c_char,
     len: size_t,
 ) -> libc::c_int {
-    let mut prev: size_t = unsafe { strlen(self_0.data_ptr()) };
+    let mut prev: size_t = safe_strlen(self_0.data_slice());
     let mut needed: size_t = len.wrapping_add(prev);
     // enough space
     if self_0.len > needed {
