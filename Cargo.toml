@@ -22,6 +22,7 @@ name = "buffer"
 
 [dependencies]
 libc = "0.2"
+byte-strings = "0.1"
 
 
 

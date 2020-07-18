@@ -7,7 +7,9 @@
     unused_assignments,
     unused_mut
 )]
+use buffer::c_slice;
 use buffer::buffer::*;
+use byte_strings::c_str;
 extern "C" {
     #[no_mangle]
     fn __assert_rtn(
@@ -463,26 +465,21 @@ fn test_buffer_append() {
 // }
 #[no_mangle]
 pub unsafe extern "C" fn test_buffer_trim() {
-    let mut buf = buffer_new_with_copy(
-        b"  Hello\n\n \x00" as *const u8 as *const libc::c_char as *mut libc::c_char,
-    );
+    let mut buf = buffer_new_with_copy(c_slice!(b"  Hello\n\n"));
     buffer_trim(&mut buf);
     equal(
         b"Hello\x00" as *const u8 as *const libc::c_char as *mut libc::c_char,
         buf.data_ptr(),
     );
     buffer_free(buf);
-    buf = buffer_new_with_copy(
-        b"  Hello\n\n \x00" as *const u8 as *const libc::c_char as *mut libc::c_char,
-    );
+    buf = buffer_new_with_copy(c_slice!(b"  Hello\n\n "));
     buffer_trim_left(&mut buf);
     equal(
         b"Hello\n\n \x00" as *const u8 as *const libc::c_char as *mut libc::c_char,
         buf.data_ptr(),
     );
     buffer_free(buf);
-    buf = buffer_new_with_copy(
-        b"  Hello\n\n \x00" as *const u8 as *const libc::c_char as *mut libc::c_char,
+    buf = buffer_new_with_copy(c_slice!(b"  Hello\n\n "),
     );
     buffer_trim_right(&mut buf);
     equal(
@@ -493,8 +490,7 @@ pub unsafe extern "C" fn test_buffer_trim() {
 }
 #[no_mangle]
 pub unsafe extern "C" fn test_buffer_compact() {
-    let mut buf = buffer_new_with_copy(b"  Hello\n\n \x00" as *const u8 as
-                                 *const libc::c_char as *mut libc::c_char);
+    let mut buf = buffer_new_with_copy(c_slice!(b"  Hello\n\n "));
     buffer_trim(&mut buf);
     assert_eq!(5, buffer_length(&buf));
     assert_eq!(10, buffer_size(&buf));
@@ -524,9 +520,7 @@ unsafe fn main_0() -> libc::c_int {
     // test_buffer_clear();
     test_buffer_trim();
     test_buffer_compact();
-    printf(
-        b"\n  \x1b[32m\xe2\x9c\x93 \x1b[90mok\x1b[0m\n\n\x00" as *const u8 as *const libc::c_char,
-    );
+    printf(c_str!(b"\n  \x1b[32m\xe2\x9c\x93 \x1b[90mok\x1b[0m\n\n").as_ptr());
     return 0 as libc::c_int;
 }
 pub fn main() {

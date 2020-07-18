@@ -217,11 +217,10 @@ pub fn buffer_new_with_string_length(str: Box<[libc::c_char]>, len: size_t) -> b
  * Allocate a new buffer with a copy of `str`.
  */
 #[no_mangle]
-pub fn buffer_new_with_copy(mut str: *const libc::c_char) -> buffer_t {
-    let mut len: size_t = unsafe{ strlen(str) };
+pub fn buffer_new_with_copy(mut str: &[libc::c_char]) -> buffer_t {
+    let mut len: size_t = safe_strlen(str);
     let mut self_0: buffer_t = buffer_new_with_size(len);
-    let s = unsafe { std::slice::from_raw_parts(str, len as usize + 1) };
-    self_0.alloc.clone_from_slice(&s);
+    self_0.alloc.clone_from_slice(str);
     self_0.data = 0;
     return self_0;
 }
@@ -233,7 +232,8 @@ pub fn buffer_compact(self_0: &mut buffer_t) -> ssize_t {
     let len: size_t = buffer_length(self_0);
     let rem: size_t = self_0.len.wrapping_sub(len);
     let mut buf = vec![0; len as usize + 1].into_boxed_slice();
-    buf.clone_from_slice(&self_0.alloc[self_0.data as usize..self_0.data as usize + len as usize + 1]);
+    let t = self_0.data_slice();
+    buf.clone_from_slice(&t[..len as usize + 1]);
     self_0.len = len;
     self_0.alloc = buf;
     self_0.data = 0;
