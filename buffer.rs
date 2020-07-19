@@ -91,7 +91,6 @@ pub fn buffer_compact(self_0: &mut buffer_t) -> ssize_t {
 /*
  * Free the buffer.
  */
-#[no_mangle]
 pub fn buffer_free(mut _self_0: buffer_t) {
     // free((*self_0).alloc as *mut libc::c_void);
     // free(self_0 as *mut libc::c_void);
@@ -99,7 +98,6 @@ pub fn buffer_free(mut _self_0: buffer_t) {
 /*
  * Return buffer size.
  */
-#[no_mangle]
 pub fn buffer_size(self_0: &buffer_t) -> size_t {
     return self_0.len;
 }
@@ -117,7 +115,6 @@ fn nearest_multiple_of(a: size_t, b: size_t) -> size_t {
 /*
  * Resize to hold `n` bytes.
  */
-#[no_mangle]
 pub fn buffer_resize(self_0: &mut buffer_t, mut n: size_t) -> libc::c_int {
     n = nearest_multiple_of(1024, n);
     self_0.len = n;
@@ -129,7 +126,6 @@ pub fn buffer_resize(self_0: &mut buffer_t, mut n: size_t) -> libc::c_int {
 /*
  * Append a printf-style formatted string to the buffer.
  */
-#[no_mangle]
 pub unsafe extern "C" fn buffer_appendf(
     mut _self_0: *mut buffer_t,
     mut _format: *const libc::c_char,
@@ -168,7 +164,6 @@ pub unsafe extern "C" fn buffer_appendf(
 /*
  * Append `str` to `self` and return 0 on success, -1 on failure.
  */
-#[no_mangle]
 pub fn buffer_append(mut self_0: &mut buffer_t, str: &[libc::c_char]) -> libc::c_int {
     return buffer_append_n(self_0, str, strlen(str));
 }
@@ -176,7 +171,6 @@ pub fn buffer_append(mut self_0: &mut buffer_t, str: &[libc::c_char]) -> libc::c
  * Append the first `len` bytes from `str` to `self` and
  * return 0 on success, -1 on failure.
  */
-#[no_mangle]
 pub fn buffer_append_n(
     self_0: &mut buffer_t,
     str: &[libc::c_char],
@@ -253,11 +247,7 @@ pub unsafe extern "C" fn buffer_slice(
 /*
  * Return 1 if the buffers contain equivalent data.
  */
-#[no_mangle]
-pub unsafe extern "C" fn buffer_equals(
-    mut self_0: &buffer_t,
-    mut other: &buffer_t,
-) -> libc::c_int {
+pub fn buffer_equals(mut self_0: &buffer_t, mut other: &buffer_t) -> libc::c_int {
     (strcmp(self_0.data_slice(), other.data_slice()) == 0) as c_int
 }
 /*
@@ -276,7 +266,6 @@ pub unsafe extern "C" fn buffer_indexof(
 /*
  * Trim leading whitespace.
  */
-#[no_mangle]
 pub fn buffer_trim_left(self_0: &mut buffer_t) {
     loop {
         let mut c = self_0.data_slice()[0] as libc::c_int;
@@ -289,7 +278,6 @@ pub fn buffer_trim_left(self_0: &mut buffer_t) {
 /*
  * Trim trailing whitespace.
  */
-#[no_mangle]
 pub fn buffer_trim_right(mut self_0: &mut buffer_t) {
     let mut c: libc::c_int = 0;
     let mut i: usize = buffer_length(self_0) as usize - 1;
@@ -305,7 +293,6 @@ pub fn buffer_trim_right(mut self_0: &mut buffer_t) {
 /*
  * Trim trailing and leading whitespace.
  */
-#[no_mangle]
 pub fn buffer_trim(self_0: &mut buffer_t) {
     buffer_trim_left(self_0);
     buffer_trim_right(self_0);
@@ -313,7 +300,6 @@ pub fn buffer_trim(self_0: &mut buffer_t) {
 /*
  * Fill the buffer with `c`.
  */
-#[no_mangle]
 pub unsafe extern "C" fn buffer_fill(mut _self_0: *mut buffer_t, mut _c: libc::c_int) {
     unimplemented!();
     // memset((*self_0).data as *mut libc::c_void, c, (*self_0).len);
@@ -328,7 +314,6 @@ pub unsafe extern "C" fn buffer_clear(mut self_0: *mut buffer_t) {
 /*
  * Print a hex dump of the buffer.
  */
-#[no_mangle]
 pub unsafe extern "C" fn buffer_print(mut _self_0: *mut buffer_t) {
     unimplemented!();
     // let mut i: libc::c_int = 0;
