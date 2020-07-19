@@ -81,48 +81,15 @@ fn test_buffer_append() {
     );
     buffer_free(buf);
 }
-// #[no_mangle]
-// pub unsafe extern "C" fn test_buffer_append_n() {
-//     let mut buf: *mut buffer_t = buffer_new();
-//     if !(0 as libc::c_int ==
-//              buffer_append_n(buf,
-//                              b"subway\x00" as *const u8 as
-//                                  *const libc::c_char,
-//                              3 as libc::c_int as size_t)) as libc::c_int as
-//            libc::c_long != 0 {
-//         __assert_rtn((*::std::mem::transmute::<&[u8; 21],
-//                                                &[libc::c_char; 21]>(b"test_buffer_append_n\x00")).as_ptr(),
-//                      b"test.c\x00" as *const u8 as *const libc::c_char,
-//                      54 as libc::c_int,
-//                      b"0 == buffer_append_n(buf, \"subway\", 3)\x00" as
-//                          *const u8 as *const libc::c_char);
-//     } else { };
-//     if !(0 as libc::c_int ==
-//              buffer_append_n(buf,
-//                              b"marines\x00" as *const u8 as
-//                                  *const libc::c_char,
-//                              6 as libc::c_int as size_t)) as libc::c_int as
-//            libc::c_long != 0 {
-//         __assert_rtn((*::std::mem::transmute::<&[u8; 21],
-//                                                &[libc::c_char; 21]>(b"test_buffer_append_n\x00")).as_ptr(),
-//                      b"test.c\x00" as *const u8 as *const libc::c_char,
-//                      55 as libc::c_int,
-//                      b"0 == buffer_append_n(buf, \"marines\", 6)\x00" as
-//                          *const u8 as *const libc::c_char);
-//     } else { };
-//     if !(strlen(b"submarine\x00" as *const u8 as *const libc::c_char) ==
-//              buffer_length(buf)) as libc::c_int as libc::c_long != 0 {
-//         __assert_rtn((*::std::mem::transmute::<&[u8; 21],
-//                                                &[libc::c_char; 21]>(b"test_buffer_append_n\x00")).as_ptr(),
-//                      b"test.c\x00" as *const u8 as *const libc::c_char,
-//                      56 as libc::c_int,
-//                      b"strlen(\"submarine\") == buffer_length(buf)\x00" as
-//                          *const u8 as *const libc::c_char);
-//     } else { };
-//     equal(b"submarine\x00" as *const u8 as *const libc::c_char as
-//               *mut libc::c_char, (*buf).data);
-//     buffer_free(buf);
-// }
+#[no_mangle]
+pub unsafe extern "C" fn test_buffer_append_n() {
+    let mut buf = buffer_new();
+    assert!(0 == buffer_append_n(&mut buf, c_slice!(b"subway"), 3));
+    assert!(0 == buffer_append_n(&mut buf, c_slice!(b"marines"), 6));
+    assert!(buffer::util::strlen(c_slice!("submarine")) == buffer_length(&buf));
+    equal(c_str!("submarine").as_ptr(), buf.data_ptr());
+    buffer_free(buf);
+}
 // #[no_mangle]
 // pub unsafe extern "C" fn test_buffer_append__grow() {
 //     let mut buf: *mut buffer_t =
@@ -508,7 +475,7 @@ unsafe fn main_0() -> libc::c_int {
     test_buffer_new_with_size();
     test_buffer_append();
     // test_buffer_append__grow();
-    // test_buffer_append_n();
+    test_buffer_append_n();
     // test_buffer_prepend();
     // test_buffer_slice();
     // test_buffer_slice__range_error();

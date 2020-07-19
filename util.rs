@@ -20,10 +20,9 @@ pub fn strncat(dest: &mut [c_char], src: &[c_char], num: size_t) {
                 to contain the concatenated resulting string, including the \
                 additional null-character.");
     }
-    let ds = &mut dest[dlen..dlen + slen];
+    let ds = &mut dest[dlen..dlen + num];
     let ss = &src[..num];
     ds.copy_from_slice(ss);
-    &dest[dlen..dlen + slen].copy_from_slice(&src[..num]);
     dest[needed - 1] = 0; // null terminator
 }
 

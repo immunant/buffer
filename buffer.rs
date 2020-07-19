@@ -2,57 +2,12 @@ use libc;
 use libc::{size_t, ssize_t};
 use crate::util;
 
-extern "C" {
-    #[no_mangle]
-    fn memcpy(_: *mut libc::c_void, _: *const libc::c_void, _: libc::c_ulong) -> *mut libc::c_void;
-    #[no_mangle]
-    fn memmove(_: *mut libc::c_void, _: *const libc::c_void, _: libc::c_ulong)
-        -> *mut libc::c_void;
-    #[no_mangle]
-    fn memset(_: *mut libc::c_void, _: libc::c_int, _: libc::c_ulong) -> *mut libc::c_void;
-    #[no_mangle]
-    fn strcmp(_: *const libc::c_char, _: *const libc::c_char) -> libc::c_int;
-    #[no_mangle]
-    fn strlen(_: *const libc::c_char) -> libc::c_ulong;
-    #[no_mangle]
-    fn strncat(_: *mut libc::c_char, _: *const libc::c_char, _: libc::c_ulong)
-        -> *mut libc::c_char;
-    #[no_mangle]
-    fn strstr(_: *const libc::c_char, _: *const libc::c_char) -> *mut libc::c_char;
-    #[no_mangle]
-    fn printf(_: *const libc::c_char, _: ...) -> libc::c_int;
-    #[no_mangle]
-    fn vsnprintf(
-        _: *mut libc::c_char,
-        _: libc::c_ulong,
-        _: *const libc::c_char,
-        _: ::std::ffi::VaList,
-    ) -> libc::c_int;
-    #[no_mangle]
-    fn malloc(_: libc::c_ulong) -> *mut libc::c_void;
-    #[no_mangle]
-    fn calloc(_: libc::c_ulong, _: libc::c_ulong) -> *mut libc::c_void;
-    #[no_mangle]
-    fn free(_: *mut libc::c_void);
-    #[no_mangle]
-    fn realloc(_: *mut libc::c_void, _: libc::c_ulong) -> *mut libc::c_void;
-}
-
-
-// #[derive(Copy, Clone)]
-// #[repr(C)]
-// pub struct buffer_t {
-//     pub len: size_t,
-//     pub alloc: *mut libc::c_char,
-//     pub data: *mut libc::c_char,
-// }
+const BUFFER_DEFAULT_SIZE: size_t = 64;
 
 pub struct buffer_t {
     pub len: size_t,
-    pub alloc: Box<[libc::c_char]>, // freed
-    // can't be a `&'a mut[libc::c_char]` -> reference has dynamic lifetime
-    // can't be a `RefCell<&'a mut[libc::c_char]>` -> reference *still* has dynamic lifetime
-    pub data: size_t, // not freed, can't be CStr cause that contains c_uchar's
+    pub alloc: Box<[libc::c_char]>,
+    pub data: size_t, // points to first char of string in `alloc`
 }
 
 impl buffer_t {
@@ -77,29 +32,22 @@ impl buffer_t {
  * Allocate a new buffer with BUFFER_DEFAULT_SIZE.
  */
 pub fn buffer_new() -> buffer_t {
-    return buffer_new_with_size(64 as size_t);
+    return buffer_new_with_size(BUFFER_DEFAULT_SIZE);
 }
 /*
  * Allocate a new buffer with `n` bytes.
  */
 pub fn buffer_new_with_size(mut n: size_t) -> buffer_t {
-    // If we used MaybeUninit<T>, then we'd have to initialize alloc field in unsafe block
-    // before we can call assume_init to get the T out.
-    let mut self_0 = buffer_t {
-        len: 0,
-        alloc: Box::new([0; 0]),
-        data: 0,
-    };
+    let mut self_0 = buffer_t { len: 0, alloc: Box::new([0; 0]), data: 0 };
     self_0.len = n;
     self_0.alloc = vec![0 as libc::c_char; n as usize + 1].into_boxed_slice();
     self_0.data = 0;
-    return self_0;
+    self_0
 }
 /*
  * Allocate a new buffer with `str`.
  */
 pub fn buffer_new_with_string(str: Box<[libc::c_char]>) -> buffer_t {
-    // note, this has to be a separate stmt, so borrow ends before str is moved into callee
     let len = util::strlen(str.as_ref());
     return buffer_new_with_string_length(str, len as size_t);
 }
@@ -107,15 +55,11 @@ pub fn buffer_new_with_string(str: Box<[libc::c_char]>) -> buffer_t {
  * Allocate a new buffer with `str` and `len`.
  */
 pub fn buffer_new_with_string_length(str: Box<[libc::c_char]>, len: size_t) -> buffer_t {
-    let mut self_0 = buffer_t {
-        len: 0,
-        alloc: Box::new([0; 0]),
-        data: 0,
-    };
+    let mut self_0 = buffer_t { len: 0, alloc: Box::new([0; 0]), data: 0 };
     self_0.len = len;
     self_0.alloc = str;
     self_0.data = 0;
-    return self_0;
+    self_0
 }
 /*
  * Allocate a new buffer with a copy of `str`.
