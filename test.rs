@@ -7,7 +7,7 @@
     unused_assignments,
     unused_mut
 )]
-use buffer::c_slice;
+use util::c_slice;
 use buffer::buffer::*;
 use byte_strings::c_str;
 extern "C" {

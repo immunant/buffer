@@ -14,12 +14,5 @@
 extern crate libc;
 extern crate byte_strings;
 
+pub mod util;
 pub mod buffer;
-
-#[macro_export]
-macro_rules! c_slice {
-    ($str:expr) => {{
-        let ptr = ::byte_strings::c_str!($str).as_ptr();
-        unsafe { std::slice::from_raw_parts(ptr, $str.len() + 1) }
-    }};
-}

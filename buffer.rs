@@ -1,4 +1,6 @@
 use libc;
+use libc::{size_t, ssize_t};
+use crate::util;
 
 extern "C" {
     #[no_mangle]
@@ -55,8 +57,6 @@ pub type __darwin_va_list = __builtin_va_list;
 pub type __darwin_wchar_t = libc::c_int;
 pub type __darwin_rune_t = __darwin_wchar_t;
 pub type __darwin_ssize_t = libc::c_long;
-pub type size_t = __darwin_size_t;
-pub type ssize_t = __darwin_ssize_t;
 pub type va_list = __darwin_va_list;
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -162,13 +162,6 @@ pub fn isspace(mut _c: libc::c_int) -> libc::c_int {
     unsafe { __istype(_c, 0x4000 as libc::c_long as libc::c_ulong) }
 }
 
-fn safe_strlen(str: &[libc::c_char]) -> size_t {
-    str
-        .iter()
-        .position(|&c| c == 0)
-        .expect("input string isn't null terminated") as size_t
-}
-
 /*
  * Allocate a new buffer with BUFFER_DEFAULT_SIZE.
  */
@@ -196,8 +189,8 @@ pub fn buffer_new_with_size(mut n: size_t) -> buffer_t {
  */
 pub fn buffer_new_with_string(str: Box<[libc::c_char]>) -> buffer_t {
     // note, this has to be a separate stmt, so borrow ends before str is moved into callee
-    let len = safe_strlen(str.as_ref());
-    return buffer_new_with_string_length(str, len);
+    let len = util::strlen(str.as_ref());
+    return buffer_new_with_string_length(str, len as size_t);
 }
 /*
  * Allocate a new buffer with `str` and `len`.
@@ -218,7 +211,7 @@ pub fn buffer_new_with_string_length(str: Box<[libc::c_char]>, len: size_t) -> b
  */
 #[no_mangle]
 pub fn buffer_new_with_copy(mut str: &[libc::c_char]) -> buffer_t {
-    let mut len: size_t = safe_strlen(str);
+    let mut len: size_t = util::strlen(str);
     let mut self_0: buffer_t = buffer_new_with_size(len);
     self_0.alloc.clone_from_slice(str);
     self_0.data = 0;
@@ -258,7 +251,7 @@ pub fn buffer_size(self_0: &buffer_t) -> size_t {
  * Return string length.
  */
 pub fn buffer_length(self_0: &buffer_t) -> size_t {
-    safe_strlen(self_0.data_slice())
+    util::strlen(self_0.data_slice())
 }
 
 // this was a macro
@@ -320,8 +313,8 @@ pub unsafe extern "C" fn buffer_appendf(
  * Append `str` to `self` and return 0 on success, -1 on failure.
  */
 #[no_mangle]
-pub fn buffer_append(mut self_0: &mut buffer_t, str: *const libc::c_char) -> libc::c_int {
-    return buffer_append_n(self_0, str, unsafe { strlen(str) });
+pub fn buffer_append(mut self_0: &mut buffer_t, str: &[libc::c_char]) -> libc::c_int {
+    return buffer_append_n(self_0, str, util::strlen(str));
 }
 /*
  * Append the first `len` bytes from `str` to `self` and
@@ -330,14 +323,14 @@ pub fn buffer_append(mut self_0: &mut buffer_t, str: *const libc::c_char) -> lib
 #[no_mangle]
 pub fn buffer_append_n(
     self_0: &mut buffer_t,
-    str: *const libc::c_char,
+    str: &[libc::c_char],
     len: size_t,
 ) -> libc::c_int {
-    let mut prev: size_t = safe_strlen(self_0.data_slice());
+    let mut prev: size_t = util::strlen(self_0.data_slice());
     let mut needed: size_t = len.wrapping_add(prev);
     // enough space
     if self_0.len > needed {
-        unsafe { strncat(self_0.data_mut_ptr(), str, len) };
+        util::strncat(self_0.data_mut_slice(), str, len);
         return 0;
     };
     // resize
@@ -346,7 +339,7 @@ pub fn buffer_append_n(
         return -1;
     };
 
-    unsafe { strncat(self_0.data_mut_ptr(), str, len) };
+    util::strncat(self_0.data_mut_slice(), str, len);
     return 0;
 }
 /*
