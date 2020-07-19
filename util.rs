@@ -8,9 +8,10 @@ pub fn strlen(str: &[c_char]) -> size_t {
 }
 
 pub fn strncat(mut dest: &[c_char], src: &[c_char], count: size_t) {
-    let mut t = dest.to_vec();
-    t.append(&mut src[..count].to_vec());
-    dest = &t[..];
+    unimplemented!();
+    // let mut t = dest.to_vec();
+    // t.append(&mut src[..count].to_vec());
+    // dest = &t[..];
 }
 
 #[macro_export]

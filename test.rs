@@ -7,7 +7,9 @@
     unused_assignments,
     unused_mut
 )]
-use util::c_slice;
+use libc::{size_t, ssize_t};
+use buffer::util::*;
+use buffer::c_slice;
 use buffer::buffer::*;
 use byte_strings::c_str;
 extern "C" {
@@ -68,10 +70,10 @@ fn test_buffer_new_with_size() {
 
 fn test_buffer_append() {
     let mut buf: buffer_t = buffer_new();
-    assert!(0 == buffer_append(&mut buf, b"Hello\x00" as *const u8 as *const libc::c_char));
-    assert!(0 == buffer_append(&mut buf, b" World\x00" as *const u8 as *const libc::c_char));
+    assert!(0 == buffer_append(&mut buf, c_slice!(b"Hello")));
+    assert!(0 == buffer_append(&mut buf, c_slice!(b" World")));
     assert!(
-        unsafe { strlen(b"Hello World\x00" as *const u8 as *const libc::c_char) }
+        buffer::util::strlen(c_slice!(b"Hello World"))
             == buffer_length(&buf)
     );
     equal(
