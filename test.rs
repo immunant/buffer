@@ -275,36 +275,17 @@ pub unsafe extern "C" fn test_buffer_append_n() {
 //     buffer_free(a);
 //     buffer_free(buf);
 // }
-// #[no_mangle]
-// pub unsafe extern "C" fn test_buffer_equals() {
-//     let mut a: *mut buffer_t =
-//         buffer_new_with_copy(b"Hello\x00" as *const u8 as *const libc::c_char
-//                                  as *mut libc::c_char);
-//     let mut b: *mut buffer_t =
-//         buffer_new_with_copy(b"Hello\x00" as *const u8 as *const libc::c_char
-//                                  as *mut libc::c_char);
-//     if !(1 as libc::c_int == buffer_equals(a, b)) as libc::c_int as
-//            libc::c_long != 0 {
-//         __assert_rtn((*::std::mem::transmute::<&[u8; 19],
-//                                                &[libc::c_char; 19]>(b"test_buffer_equals\x00")).as_ptr(),
-//                      b"test.c\x00" as *const u8 as *const libc::c_char,
-//                      142 as libc::c_int,
-//                      b"1 == buffer_equals(a, b)\x00" as *const u8 as
-//                          *const libc::c_char);
-//     } else { };
-//     buffer_append(b, b" World\x00" as *const u8 as *const libc::c_char);
-//     if !(0 as libc::c_int == buffer_equals(a, b)) as libc::c_int as
-//            libc::c_long != 0 {
-//         __assert_rtn((*::std::mem::transmute::<&[u8; 19],
-//                                                &[libc::c_char; 19]>(b"test_buffer_equals\x00")).as_ptr(),
-//                      b"test.c\x00" as *const u8 as *const libc::c_char,
-//                      145 as libc::c_int,
-//                      b"0 == buffer_equals(a, b)\x00" as *const u8 as
-//                          *const libc::c_char);
-//     } else { };
-//     buffer_free(a);
-//     buffer_free(b);
-// }
+#[no_mangle]
+pub unsafe extern "C" fn test_buffer_equals() {
+    let mut a = buffer_new_with_copy(c_slice!(b"Hello"));
+    let mut b = buffer_new_with_copy(c_slice!(b"Hello"));
+    assert!(1 == buffer_equals(&a, &b));
+
+    buffer_append(&mut b, c_slice!(b" World"));
+    assert!(0 == buffer_equals(&a, &b));
+    buffer_free(a);
+    buffer_free(b);
+}
 // #[no_mangle]
 // pub unsafe extern "C" fn test_buffer_formatting() {
 //     let mut buf: *mut buffer_t = buffer_new();
@@ -481,7 +462,7 @@ unsafe fn main_0() -> libc::c_int {
     // test_buffer_slice__range_error();
     // test_buffer_slice__end();
     // test_buffer_slice__end_overflow();
-    // test_buffer_equals();
+    test_buffer_equals();
     // test_buffer_formatting();
     // test_buffer_indexof();
     // test_buffer_fill();

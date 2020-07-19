@@ -1,6 +1,7 @@
 use libc;
 use libc::{size_t, ssize_t};
-use crate::util;
+use crate::util::*;
+use std::os::raw::c_int;
 
 const BUFFER_DEFAULT_SIZE: size_t = 64;
 
@@ -48,7 +49,7 @@ pub fn buffer_new_with_size(mut n: size_t) -> buffer_t {
  * Allocate a new buffer with `str`.
  */
 pub fn buffer_new_with_string(str: Box<[libc::c_char]>) -> buffer_t {
-    let len = util::strlen(str.as_ref());
+    let len = strlen(str.as_ref());
     return buffer_new_with_string_length(str, len as size_t);
 }
 /*
@@ -66,7 +67,7 @@ pub fn buffer_new_with_string_length(str: Box<[libc::c_char]>, len: size_t) -> b
  */
 #[no_mangle]
 pub fn buffer_new_with_copy(mut str: &[libc::c_char]) -> buffer_t {
-    let mut len: size_t = util::strlen(str);
+    let mut len: size_t = strlen(str);
     let mut self_0: buffer_t = buffer_new_with_size(len);
     self_0.alloc.clone_from_slice(str);
     self_0.data = 0;
@@ -106,7 +107,7 @@ pub fn buffer_size(self_0: &buffer_t) -> size_t {
  * Return string length.
  */
 pub fn buffer_length(self_0: &buffer_t) -> size_t {
-    util::strlen(self_0.data_slice())
+    strlen(self_0.data_slice())
 }
 
 // this was a macro
@@ -169,7 +170,7 @@ pub unsafe extern "C" fn buffer_appendf(
  */
 #[no_mangle]
 pub fn buffer_append(mut self_0: &mut buffer_t, str: &[libc::c_char]) -> libc::c_int {
-    return buffer_append_n(self_0, str, util::strlen(str));
+    return buffer_append_n(self_0, str, strlen(str));
 }
 /*
  * Append the first `len` bytes from `str` to `self` and
@@ -181,11 +182,11 @@ pub fn buffer_append_n(
     str: &[libc::c_char],
     len: size_t,
 ) -> libc::c_int {
-    let mut prev: size_t = util::strlen(self_0.data_slice());
+    let mut prev: size_t = strlen(self_0.data_slice());
     let mut needed: size_t = len.wrapping_add(prev);
     // enough space
     if self_0.len > needed {
-        util::strncat(self_0.data_mut_slice(), str, len);
+        strncat(self_0.data_mut_slice(), str, len);
         return 0;
     };
     // resize
@@ -194,7 +195,7 @@ pub fn buffer_append_n(
         return -1;
     };
 
-    util::strncat(self_0.data_mut_slice(), str, len);
+    strncat(self_0.data_mut_slice(), str, len);
     return 0;
 }
 /*
@@ -206,14 +207,13 @@ pub unsafe extern "C" fn buffer_prepend(
     mut _str: *mut libc::c_char,
 ) -> libc::c_int {
     unimplemented!();
-    // let mut ret: libc::c_int = 0;
     // let mut len: size_t = strlen(str);
     // let mut prev: size_t = strlen((*self_0).data);
     // let mut needed: size_t = len.wrapping_add(prev);
     // // enough space
     // if !((*self_0).len > needed) {
     //     // resize
-    //     ret = buffer_resize(self_0, needed);
+    //     let ret = buffer_resize(self_0, needed);
     //     if -(1 as libc::c_int) == ret { return -(1 as libc::c_int) }
     // }
     // // move
@@ -255,12 +255,10 @@ pub unsafe extern "C" fn buffer_slice(
  */
 #[no_mangle]
 pub unsafe extern "C" fn buffer_equals(
-    mut _self_0: *mut buffer_t,
-    mut _other: *mut buffer_t,
+    mut self_0: &buffer_t,
+    mut other: &buffer_t,
 ) -> libc::c_int {
-    unimplemented!();
-    // return (0 as libc::c_int == strcmp((*self_0).data, (*other).data)) as
-    //            libc::c_int;
+    (strcmp(self_0.data_slice(), other.data_slice()) == 0) as c_int
 }
 /*
  * Return the index of the substring `str`, or -1 on failure.
@@ -280,10 +278,9 @@ pub unsafe extern "C" fn buffer_indexof(
  */
 #[no_mangle]
 pub fn buffer_trim_left(self_0: &mut buffer_t) {
-    let mut c: libc::c_int = 0;
     loop {
-        c = self_0.data_slice()[0] as libc::c_int;
-        if !(c != 0 && util::isspace(c) != 0) {
+        let mut c = self_0.data_slice()[0] as libc::c_int;
+        if !(c != 0 && isspace(c) != 0) {
             break;
         }
         self_0.data += 1;
@@ -298,7 +295,7 @@ pub fn buffer_trim_right(mut self_0: &mut buffer_t) {
     let mut i: usize = buffer_length(self_0) as usize - 1;
     loop {
         c = self_0.data_slice()[i] as libc::c_int;
-        if !(c != 0 && util::isspace(c) != 0) {
+        if !(c != 0 && isspace(c) != 0) {
             break;
         }
         self_0.data_mut_slice()[i] = 0;

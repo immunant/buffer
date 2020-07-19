@@ -8,6 +8,14 @@ pub fn strlen(str: &[c_char]) -> size_t {
         .expect("input string isn't null terminated") as size_t
 }
 
+pub fn strcmp(str1: &[c_char], str2: &[c_char]) -> c_int {
+    // make sure we don't go out of bounds
+    let num = min(str1.len(), str2.len());
+    unsafe {
+        libc::strncmp(str1.as_ptr(), str2.as_ptr(), num)
+    }
+}
+
 pub fn strncat(dest: &mut [c_char], src: &[c_char], num: size_t) {
     let dlen = strlen(dest);
     let slen = strlen(src);
