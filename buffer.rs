@@ -118,9 +118,11 @@ fn nearest_multiple_of(a: size_t, b: size_t) -> size_t {
 pub fn buffer_resize(self_0: &mut buffer_t, mut n: size_t) -> libc::c_int {
     n = nearest_multiple_of(1024, n);
     self_0.len = n;
-    self_0.data = 0; // TODO: explain how we figure that data needs to be reset
-    self_0.alloc = vec![0 as libc::c_char; n as usize + 1].into_boxed_slice();
-    // *(*self_0).alloc.offset(n as isize) = '\u{0}' as i32 as libc::c_char;
+    self_0.data = 0;
+    let mut t = (*self_0.alloc).to_vec();
+    t.resize_with(n, Default::default);
+    self_0.alloc = t.into_boxed_slice();
+    // NOTE: this statement in original C became superfluous: self->alloc[n] = '\0';
     return 0 as libc::c_int;
 }
 /*
@@ -195,28 +197,29 @@ pub fn buffer_append_n(
 /*
  * Prepend `str` to `self` and return 0 on success, -1 on failure.
  */
-#[no_mangle]
-pub unsafe extern "C" fn buffer_prepend(
-    mut _self_0: *mut buffer_t,
-    mut _str: *mut libc::c_char,
+pub fn buffer_prepend(
+    mut self_0: &mut buffer_t,
+    mut str: &[libc::c_char],
 ) -> libc::c_int {
-    unimplemented!();
-    // let mut len: size_t = strlen(str);
-    // let mut prev: size_t = strlen((*self_0).data);
-    // let mut needed: size_t = len.wrapping_add(prev);
-    // // enough space
-    // if !((*self_0).len > needed) {
-    //     // resize
-    //     let ret = buffer_resize(self_0, needed);
-    //     if -(1 as libc::c_int) == ret { return -(1 as libc::c_int) }
-    // }
-    // // move
-    // memmove((*self_0).data.offset(len as isize) as *mut libc::c_void,
-    //         (*self_0).data as *const libc::c_void,
-    //         len.wrapping_add(1 as libc::c_int as libc::c_ulong));
-    // memcpy((*self_0).data as *mut libc::c_void, str as *const libc::c_void,
-    //        len);
-    // return 0 as libc::c_int;
+    let mut len: size_t = strlen(str);
+    let mut prev: size_t = strlen(self_0.data_slice());
+    let mut needed: size_t = len.wrapping_add(prev);
+    // enough space
+    if !(self_0.len > needed) {
+        // resize
+        let ret = buffer_resize(&mut self_0, needed);
+        if -1 == ret { return -1 }
+    }
+    // move
+    unsafe {
+        libc::memmove(self_0.data_ptr().offset(len as isize) as *mut libc::c_void,
+                self_0.data_ptr() as *const libc::c_void,
+                len + 1);
+        libc::memcpy(self_0.data_ptr() as *mut libc::c_void,
+                     str.as_ptr() as *const libc::c_void,
+               len);
+    }
+    return 0 as libc::c_int;
 }
 /*
  * Return a new buffer based on the `from..to` slice of `buf`,
@@ -253,15 +256,13 @@ pub fn buffer_equals(mut self_0: &buffer_t, mut other: &buffer_t) -> libc::c_int
 /*
  * Return the index of the substring `str`, or -1 on failure.
  */
-#[no_mangle]
-pub unsafe extern "C" fn buffer_indexof(
-    mut _self_0: *mut buffer_t,
-    mut _str: *mut libc::c_char,
+pub fn buffer_indexof(
+    self_0: &buffer_t,
+    str: &[libc::c_char],
 ) -> ssize_t {
-    unimplemented!();
-    // let mut sub: *mut libc::c_char = strstr((*self_0).data, str);
-    // if sub.is_null() { return -(1 as libc::c_int) as ssize_t }
-    // return sub.wrapping_offset_from((*self_0).data) as libc::c_long;
+    let mut sub = strstr(self_0.data_slice(), str);
+    if sub.is_none() { return -(1 as libc::c_int) as ssize_t }
+    return sub.unwrap().wrapping_sub(self_0.data) as ssize_t;
 }
 /*
  * Trim leading whitespace.

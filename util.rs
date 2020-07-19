@@ -1,6 +1,8 @@
 use libc::*;
 use std::cmp::min;
 
+
+
 pub fn strlen(str: &[c_char]) -> size_t {
     str
         .iter()
@@ -14,6 +16,12 @@ pub fn strcmp(str1: &[c_char], str2: &[c_char]) -> c_int {
     unsafe {
         libc::strncmp(str1.as_ptr(), str2.as_ptr(), num)
     }
+}
+
+// returns index instead of pointer
+pub fn strstr(str: &[c_char], substr: &[c_char]) -> Option<size_t> {
+    let substr = &substr[..substr.len()-1]; // slice off null-terminator
+    str.windows(substr.len()).position(|w| w == substr).or(None)
 }
 
 pub fn strncat(dest: &mut [c_char], src: &[c_char], num: size_t) {

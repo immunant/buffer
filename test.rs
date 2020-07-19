@@ -318,48 +318,16 @@ pub unsafe extern "C" fn test_buffer_equals() {
 //     buffer_free(buf);
 // }
 // #[no_mangle]
-// pub unsafe extern "C" fn test_buffer_indexof() {
-//     let mut buf: *mut buffer_t =
-//         buffer_new_with_copy(b"Tobi is a ferret\x00" as *const u8 as
-//                                  *const libc::c_char as *mut libc::c_char);
-//     let mut i: ssize_t =
-//         buffer_indexof(buf,
-//                        b"is\x00" as *const u8 as *const libc::c_char as
-//                            *mut libc::c_char);
-//     if !(5 as libc::c_int as libc::c_long == i) as libc::c_int as libc::c_long
-//            != 0 {
-//         __assert_rtn((*::std::mem::transmute::<&[u8; 20],
-//                                                &[libc::c_char; 20]>(b"test_buffer_indexof\x00")).as_ptr(),
-//                      b"test.c\x00" as *const u8 as *const libc::c_char,
-//                      167 as libc::c_int,
-//                      b"5 == i\x00" as *const u8 as *const libc::c_char);
-//     } else { };
-//     i =
-//         buffer_indexof(buf,
-//                        b"a\x00" as *const u8 as *const libc::c_char as
-//                            *mut libc::c_char);
-//     if !(8 as libc::c_int as libc::c_long == i) as libc::c_int as libc::c_long
-//            != 0 {
-//         __assert_rtn((*::std::mem::transmute::<&[u8; 20],
-//                                                &[libc::c_char; 20]>(b"test_buffer_indexof\x00")).as_ptr(),
-//                      b"test.c\x00" as *const u8 as *const libc::c_char,
-//                      170 as libc::c_int,
-//                      b"8 == i\x00" as *const u8 as *const libc::c_char);
-//     } else { };
-//     i =
-//         buffer_indexof(buf,
-//                        b"something\x00" as *const u8 as *const libc::c_char as
-//                            *mut libc::c_char);
-//     if !(-(1 as libc::c_int) as libc::c_long == i) as libc::c_int as
-//            libc::c_long != 0 {
-//         __assert_rtn((*::std::mem::transmute::<&[u8; 20],
-//                                                &[libc::c_char; 20]>(b"test_buffer_indexof\x00")).as_ptr(),
-//                      b"test.c\x00" as *const u8 as *const libc::c_char,
-//                      173 as libc::c_int,
-//                      b"-1 == i\x00" as *const u8 as *const libc::c_char);
-//     } else { };
-//     buffer_free(buf);
-// }
+pub unsafe extern "C" fn test_buffer_indexof() {
+    let mut buf = buffer_new_with_copy(c_slice!(b"Tobi is a ferret"));
+    let mut i = buffer_indexof(&buf, c_slice!(b"is"));
+    assert_eq!(5, i);
+    i = buffer_indexof(&buf, c_slice!(b"a"));
+    assert_eq!(8, i);
+    i = buffer_indexof(&buf, c_slice!(b"something"));
+    assert_eq!(-1, i);
+    buffer_free(buf);
+}
 // #[no_mangle]
 // pub unsafe extern "C" fn test_buffer_fill() {
 //     let mut buf: *mut buffer_t =
@@ -464,7 +432,7 @@ unsafe fn main_0() -> libc::c_int {
     // test_buffer_slice__end_overflow();
     test_buffer_equals();
     // test_buffer_formatting();
-    // test_buffer_indexof();
+    test_buffer_indexof();
     // test_buffer_fill();
     // test_buffer_clear();
     test_buffer_trim();
