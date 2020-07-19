@@ -36,80 +36,9 @@ extern "C" {
     fn free(_: *mut libc::c_void);
     #[no_mangle]
     fn realloc(_: *mut libc::c_void, _: libc::c_ulong) -> *mut libc::c_void;
-    #[no_mangle]
-    fn __maskrune(_: __darwin_ct_rune_t, _: libc::c_ulong) -> libc::c_int;
-    #[no_mangle]
-    static mut _DefaultRuneLocale: _RuneLocale;
 }
-pub type __builtin_va_list = [__va_list_tag; 1];
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct __va_list_tag {
-    pub gp_offset: libc::c_uint,
-    pub fp_offset: libc::c_uint,
-    pub overflow_arg_area: *mut libc::c_void,
-    pub reg_save_area: *mut libc::c_void,
-}
-pub type __uint32_t = libc::c_uint;
-pub type __darwin_ct_rune_t = libc::c_int;
-pub type __darwin_size_t = libc::c_ulong;
-pub type __darwin_va_list = __builtin_va_list;
-pub type __darwin_wchar_t = libc::c_int;
-pub type __darwin_rune_t = __darwin_wchar_t;
-pub type __darwin_ssize_t = libc::c_long;
-pub type va_list = __darwin_va_list;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _RuneEntry {
-    pub __min: __darwin_rune_t,
-    pub __max: __darwin_rune_t,
-    pub __map: __darwin_rune_t,
-    pub __types: *mut __uint32_t,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _RuneRange {
-    pub __nranges: libc::c_int,
-    pub __ranges: *mut _RuneEntry,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _RuneCharClass {
-    pub __name: [libc::c_char; 14],
-    pub __mask: __uint32_t,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _RuneLocale {
-    pub __magic: [libc::c_char; 8],
-    pub __encoding: [libc::c_char; 32],
-    pub __sgetrune: Option<
-        unsafe extern "C" fn(
-            _: *const libc::c_char,
-            _: __darwin_size_t,
-            _: *mut *const libc::c_char,
-        ) -> __darwin_rune_t,
-    >,
-    pub __sputrune: Option<
-        unsafe extern "C" fn(
-            _: __darwin_rune_t,
-            _: *mut libc::c_char,
-            _: __darwin_size_t,
-            _: *mut *mut libc::c_char,
-        ) -> libc::c_int,
-    >,
-    pub __invalid_rune: __darwin_rune_t,
-    pub __runetype: [__uint32_t; 256],
-    pub __maplower: [__darwin_rune_t; 256],
-    pub __mapupper: [__darwin_rune_t; 256],
-    pub __runetype_ext: _RuneRange,
-    pub __maplower_ext: _RuneRange,
-    pub __mapupper_ext: _RuneRange,
-    pub __variable: *mut libc::c_void,
-    pub __variable_len: libc::c_int,
-    pub __ncharclasses: libc::c_int,
-    pub __charclasses: *mut _RuneCharClass,
-}
+
+
 // #[derive(Copy, Clone)]
 // #[repr(C)]
 // pub struct buffer_t {
@@ -142,24 +71,6 @@ impl buffer_t {
     pub fn data_mut_slice(&mut self) -> &mut [libc::c_char] {
         &mut self.alloc[self.data as usize..]
     }
-}
-
-fn isascii(mut _c: libc::c_int) -> libc::c_int {
-    return (_c & !(0x7f as libc::c_int) == 0 as libc::c_int) as libc::c_int;
-}
-
-unsafe fn __istype(mut _c: __darwin_ct_rune_t, mut _f: libc::c_ulong) -> libc::c_int {
-    return if isascii(_c) != 0 {
-        (_DefaultRuneLocale.__runetype[_c as usize] as libc::c_ulong & _f != 0) as libc::c_int
-    } else {
-        (__maskrune(_c, _f) != 0) as libc::c_int
-    };
-}
-#[no_mangle]
-#[inline]
-#[linkage = "external"]
-pub fn isspace(mut _c: libc::c_int) -> libc::c_int {
-    unsafe { __istype(_c, 0x4000 as libc::c_long as libc::c_ulong) }
 }
 
 /*
@@ -428,7 +339,7 @@ pub fn buffer_trim_left(self_0: &mut buffer_t) {
     let mut c: libc::c_int = 0;
     loop {
         c = self_0.data_slice()[0] as libc::c_int;
-        if !(c != 0 && isspace(c) != 0) {
+        if !(c != 0 && util::isspace(c) != 0) {
             break;
         }
         self_0.data += 1;
@@ -443,7 +354,7 @@ pub fn buffer_trim_right(mut self_0: &mut buffer_t) {
     let mut i: usize = buffer_length(self_0) as usize - 1;
     loop {
         c = self_0.data_slice()[i] as libc::c_int;
-        if !(c != 0 && isspace(c) != 0) {
+        if !(c != 0 && util::isspace(c) != 0) {
             break;
         }
         self_0.data_mut_slice()[i] = 0;

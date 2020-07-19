@@ -10,6 +10,7 @@
 #![feature(linkage)]
 #![feature(ptr_wrapping_offset_from)]
 #![feature(new_uninit)]
+#![feature(assoc_char_funcs)]
 
 extern crate libc;
 extern crate byte_strings;

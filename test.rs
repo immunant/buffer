@@ -8,7 +8,6 @@
     unused_mut
 )]
 use libc::{size_t, ssize_t};
-use buffer::util::*;
 use buffer::c_slice;
 use buffer::buffer::*;
 use byte_strings::c_str;
