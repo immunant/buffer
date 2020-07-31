@@ -2,6 +2,7 @@ use libc;
 use libc::{size_t, ssize_t};
 use crate::util::*;
 use std::os::raw::c_int;
+use std::convert::TryInto;
 
 const BUFFER_DEFAULT_SIZE: size_t = 64;
 
@@ -115,15 +116,18 @@ fn nearest_multiple_of(a: size_t, b: size_t) -> size_t {
 /*
  * Resize to hold `n` bytes.
  */
-pub fn buffer_resize(self_0: &mut buffer_t, mut n: size_t) -> libc::c_int {
+pub fn buffer_resize(
+    self_0: &mut buffer_t,
+    mut n: size_t) -> libc::c_int {
     n = nearest_multiple_of(1024, n);
     self_0.len = n;
     self_0.data = 0;
-    let mut t = (*self_0.alloc).to_vec();
-    t.resize_with(n, Default::default);
+    let mut t = self_0.alloc.to_vec();
+    t.resize_with(n + 1, Default::default);
     self_0.alloc = t.into_boxed_slice();
-    // NOTE: this statement in original C became superfluous: self->alloc[n] = '\0';
-    return 0 as libc::c_int;
+    // NOTE: this statement is superfluous:
+    self_0.alloc[n] = 0;
+    return 0;
 }
 /*
  * Append a printf-style formatted string to the buffer.
@@ -225,27 +229,26 @@ pub fn buffer_prepend(
  * Return a new buffer based on the `from..to` slice of `buf`,
  * or NULL on error.
  */
-#[no_mangle]
-pub unsafe extern "C" fn buffer_slice(
-    mut _buf: *mut buffer_t,
-    mut _from: size_t,
-    mut _to: ssize_t,
-) -> *mut buffer_t {
-    unimplemented!();
-    // let mut len: size_t = strlen((*buf).data);
-    // // bad range
-    // if (to as libc::c_ulong) < from { return 0 as *mut buffer_t }
-    // // relative to end
-    // if to < 0 as libc::c_int as libc::c_long {
-    //     to = len.wrapping_sub(!to as libc::c_ulong) as ssize_t
-    // }
-    // // cap end
-    // if to as libc::c_ulong > len { to = len as ssize_t }
-    // let mut n: size_t = (to as libc::c_ulong).wrapping_sub(from);
-    // let mut self_0: *mut buffer_t = buffer_new_with_size(n);
-    // memcpy((*self_0).data as *mut libc::c_void,
-    //        (*buf).data.offset(from as isize) as *const libc::c_void, n);
-    // return self_0;
+pub fn buffer_slice(
+    mut buf: &buffer_t,
+    mut from: size_t,
+    mut to: ssize_t,
+) -> Option<buffer_t> {
+    let mut len: size_t = strlen(buf.data_slice());
+    // bad range
+    if (to as size_t) < from { return None }
+    // relative to end
+    if to < 0 {
+        to = (len - (!to as usize)) as ssize_t
+    }
+    // cap end
+    if to as size_t > len { to = len as ssize_t }
+    let mut n: size_t = (to as size_t)- from;
+    let mut self_0 = buffer_new_with_size(n);
+    let src = &buf.data_slice()[from..from + n];
+    let dst = &mut self_0.data_mut_slice()[..n];
+    dst.copy_from_slice(src);
+    return Some(self_0);
 }
 /*
  * Return 1 if the buffers contain equivalent data.
@@ -301,16 +304,18 @@ pub fn buffer_trim(self_0: &mut buffer_t) {
 /*
  * Fill the buffer with `c`.
  */
-pub unsafe extern "C" fn buffer_fill(mut _self_0: *mut buffer_t, mut _c: libc::c_int) {
-    unimplemented!();
+pub fn buffer_fill(mut self_0: &mut buffer_t, mut c: libc::c_int) {
+    // NOTE: memset fills with a i32, fill takes an i8 so we use try_into.
     // memset((*self_0).data as *mut libc::c_void, c, (*self_0).len);
+    self_0.data_mut_slice().fill(c.try_into().unwrap());
+
 }
 /*
  * Fill the buffer with 0.
  */
 #[no_mangle]
-pub unsafe extern "C" fn buffer_clear(mut self_0: *mut buffer_t) {
-    buffer_fill(self_0, 0 as libc::c_int);
+pub fn buffer_clear(mut self_0: &mut buffer_t) {
+    buffer_fill(self_0, 0);
 }
 /*
  * Print a hex dump of the buffer.
