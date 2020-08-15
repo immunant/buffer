@@ -8,7 +8,7 @@ const BUFFER_DEFAULT_SIZE: size_t = 64;
 
 pub struct buffer_t {
     pub len: size_t,
-    pub alloc: Box<[libc::c_char]>,
+    pub alloc: Vec<libc::c_char>,
     pub data: size_t, // points to first char of string in `alloc`
 }
 
@@ -40,24 +40,24 @@ pub fn buffer_new() -> buffer_t {
  * Allocate a new buffer with `n` bytes.
  */
 pub fn buffer_new_with_size(mut n: size_t) -> buffer_t {
-    let mut self_0 = buffer_t { len: 0, alloc: Box::new([0; 0]), data: 0 };
+    let mut self_0 = buffer_t { len: 0, alloc: vec![], data: 0 };
     self_0.len = n;
-    self_0.alloc = vec![0 as libc::c_char; n as usize + 1].into_boxed_slice();
+    self_0.alloc = vec![0 as libc::c_char; n as usize + 1];
     self_0.data = 0;
     self_0
 }
 /*
  * Allocate a new buffer with `str`.
  */
-pub fn buffer_new_with_string(str: Box<[libc::c_char]>) -> buffer_t {
+pub fn buffer_new_with_string(str: Vec<libc::c_char>) -> buffer_t {
     let len = strlen(str.as_ref());
     return buffer_new_with_string_length(str, len as size_t);
 }
 /*
  * Allocate a new buffer with `str` and `len`.
  */
-pub fn buffer_new_with_string_length(str: Box<[libc::c_char]>, len: size_t) -> buffer_t {
-    let mut self_0 = buffer_t { len: 0, alloc: Box::new([0; 0]), data: 0 };
+pub fn buffer_new_with_string_length(str: Vec<libc::c_char>, len: size_t) -> buffer_t {
+    let mut self_0 = buffer_t { len: 0, alloc: vec!{}, data: 0 };
     self_0.len = len;
     self_0.alloc = str;
     self_0.data = 0;
@@ -81,7 +81,7 @@ pub fn buffer_new_with_copy(mut str: &[libc::c_char]) -> buffer_t {
 pub fn buffer_compact(self_0: &mut buffer_t) -> ssize_t {
     let len: size_t = buffer_length(self_0);
     let rem: size_t = self_0.len.wrapping_sub(len);
-    let mut buf = vec![0; len as usize + 1].into_boxed_slice();
+    let mut buf = vec![0; len as usize + 1];
     let t = self_0.data_slice();
     buf.clone_from_slice(&t[..len as usize + 1]);
     self_0.len = len;
@@ -122,9 +122,7 @@ pub fn buffer_resize(
     n = nearest_multiple_of(1024, n);
     self_0.len = n;
     self_0.data = 0;
-    let mut t = self_0.alloc.to_vec();
-    t.resize_with(n + 1, Default::default);
-    self_0.alloc = t.into_boxed_slice();
+    self_0.alloc.resize_with(n + 1, Default::default);
     // NOTE: this statement is superfluous:
     self_0.alloc[n] = 0;
     return 0;
